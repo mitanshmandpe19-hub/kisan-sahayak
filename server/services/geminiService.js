@@ -1,4 +1,4 @@
-﻿import dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import { landownerSchemes } from '../../src/data/landownerSchemes.js';
 import { landlessSchemes } from '../../src/data/landlessSchemes.js';
 
@@ -9,7 +9,8 @@ const schemeMap = Object.fromEntries(allSchemes.map(s => [s.id, s]));
 
 export async function generateExplanation({ schemeId, schemeName, status, answers = {}, language = 'en', blockerReason = null }) {
   const lang = ['en', 'hi', 'mr'].includes(language) ? language : 'en';
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+
 
   if (apiKey && apiKey.trim().length > 10) {
     try {

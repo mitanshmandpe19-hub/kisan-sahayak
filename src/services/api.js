@@ -1,4 +1,10 @@
-﻿const API_BASE = '/api';
+// Base API URL configuration:
+// In production (Vercel), set VITE_API_URL to your Render backend URL (e.g., https://kisan-sahayak-backend.onrender.com)
+// In local development, if VITE_API_URL is omitted, it defaults to '/api' which is proxied by Vite.
+const rawBase = (import.meta.env.VITE_API_URL || '').trim();
+const API_BASE = rawBase 
+  ? `${rawBase.replace(/\/+$/, '').replace(/\/api$/, '')}/api`
+  : '/api';
 
 export const api = {
   async sendOtp(phone_number) {

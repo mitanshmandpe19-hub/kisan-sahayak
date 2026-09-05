@@ -12,7 +12,14 @@ initDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Enable CORS (supports specific Vercel frontend URL via CLIENT_URL/CORS_ORIGIN, or defaults to all origins)
+const allowedOrigins = process.env.CLIENT_URL || process.env.CORS_ORIGIN || '*';
+app.use(cors({
+  origin: allowedOrigins === '*' ? '*' : allowedOrigins.split(',').map(s => s.trim()),
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -30,8 +37,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`[Kisan Sahayak Backend] Running on http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Kisan Sahayak Backend] Running on port ${PORT}`);
 });
 
 server.on('error', (err) => {
@@ -41,4 +48,5 @@ server.on('error', (err) => {
     console.error('[Server Error]:', err);
   }
 });
+
 
