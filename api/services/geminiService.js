@@ -9,12 +9,13 @@ const schemeMap = Object.fromEntries(allSchemes.map(s => [s.id, s]));
 
 export async function generateExplanation({ schemeId, schemeName, status, answers = {}, language = 'en', blockerReason = null }) {
   const lang = ['en', 'hi', 'mr'].includes(language) ? language : 'en';
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  let apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '').trim();
+  apiKey = apiKey.replace(/^GEMINI_API_KEY\s*=\s*/i, '').replace(/^['"]|['"]$/g, '').trim();
 
-  if (apiKey && apiKey.trim().length > 10) {
+  if (apiKey && apiKey.length > 10) {
     try {
       const { GoogleGenAI } = await import('@google/genai');
-      const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
+      const ai = new GoogleGenAI({ apiKey });
 
       const langNames = { en: 'English', hi: 'Hindi in Devanagari script', mr: 'Marathi in Devanagari script' };
       const targetLang = langNames[lang] || 'English';
@@ -40,15 +41,25 @@ export async function generateExplanation({ schemeId, schemeName, status, answer
         '}'
       ].join('\n');
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json'
-        }
-      });
+      const candidateModels = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.7-flash'];
+      let response = null;
 
-      const responseText = response.text ? response.text.trim() : '';
+      for (const modelName of candidateModels) {
+        try {
+          response = await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json'
+            }
+          });
+          if (response && response.text) break;
+        } catch (mErr) {
+          console.warn(`[Gemini Model ${modelName} warning]:`, mErr.message);
+        }
+      }
+
+      const responseText = response?.text ? response.text.trim() : '';
       if (responseText) {
         const cleaned = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(cleaned);
@@ -63,6 +74,7 @@ export async function generateExplanation({ schemeId, schemeName, status, answer
     } catch (err) {
       console.warn('[Gemini API Warning]: Could not fetch live explanation, using curated fallback:', err.message);
     }
+
   }
 
   // Curated multilingual fallback
