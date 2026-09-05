@@ -5,5 +5,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+*.sqlite
+*.sqlite-*
+*.db
 .DS_Store
 Thumbs.db
